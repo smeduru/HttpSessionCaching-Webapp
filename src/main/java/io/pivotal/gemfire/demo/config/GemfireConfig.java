@@ -2,12 +2,9 @@ package io.pivotal.gemfire.demo.config;
 
 import io.pivotal.gemfire.demo.HttpSessionCachingWebappApplication;
 import org.apache.geode.cache.GemFireCache;
-import org.apache.geode.cache.client.ClientCache;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.gemfire.CacheFactoryBean;
-import org.springframework.data.gemfire.LocalRegionFactoryBean;
 import org.springframework.data.gemfire.client.ClientCacheFactoryBean;
 import org.springframework.data.gemfire.client.ClientRegionFactoryBean;
 import org.springframework.data.gemfire.client.PoolFactoryBean;
@@ -22,7 +19,7 @@ import java.util.Properties;
 @Configuration
 public class GemfireConfig {
 
-    protected static final String DEFAULT_GEMFIRE_LOG_LEVEL = "debug";
+    protected static final String DEFAULT_GEMFIRE_LOG_LEVEL = "info";
 
     protected String applicationName() {
         return HttpSessionCachingWebappApplication.class.getSimpleName();
@@ -40,7 +37,7 @@ public class GemfireConfig {
     }
 
     @Bean
-    ClientCacheFactoryBean gemfireCache() {
+    ClientCacheFactoryBean clientCacheFactoryBean() {
         ClientCacheFactoryBean gemfireCache = new ClientCacheFactoryBean();
         gemfireCache.setClose(true);
         gemfireCache.setProperties(gemfireProperties());
@@ -48,22 +45,13 @@ public class GemfireConfig {
     }
 
     @Bean(name = GemfireConstants.DEFAULT_GEMFIRE_POOL_NAME)
-    PoolFactoryBean gemfirePool(@Value("${locator.host}") String host, @Value("${locator.port}") int port) {
+    PoolFactoryBean gemfirePool(@Value("${locator.address}") String locator) {
         PoolFactoryBean gemfirePool = new PoolFactoryBean();
         gemfirePool.setKeepAlive(false);
         gemfirePool.setSubscriptionEnabled(true);
         gemfirePool.setThreadLocalConnections(false);
-        gemfirePool.addLocators(new ConnectionEndpoint(host, port));
+        gemfirePool.addLocators(ConnectionEndpoint.parse(locator));
         return gemfirePool;
-    }
-
-    @Bean
-    ClientRegionFactoryBean<String, String> clientRegionFactoryBean(final GemFireCache cache) {
-        ClientRegionFactoryBean<String, String> r = new ClientRegionFactoryBean();
-        r.setCache(cache);
-        r.setName("gemfire_modules_sessions");
-        r.setPersistent(false);
-        return r;
     }
 
 }
